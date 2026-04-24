@@ -84,7 +84,7 @@ export default function Settings() {
   );
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="p-4 md:p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Настройки</h1>
 
       {error && (

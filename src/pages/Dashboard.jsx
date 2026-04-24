@@ -57,7 +57,7 @@ export default function Dashboard() {
   if (loading) return <Loader />;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-4 md:p-6 max-w-3xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Главная</h1>

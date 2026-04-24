@@ -190,7 +190,7 @@ export default function ClientDetail({ isNew = false }) {
   const maxLink = getMaxContactLink(client.max_username);
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="p-4 md:p-6 max-w-2xl mx-auto">
       {/* Back */}
       <Link to="/clients" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-rose-500 mb-5">
         ← Клиенты

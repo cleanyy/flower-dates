@@ -15,9 +15,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen flex">
-        {/* ── Sidebar ── */}
-        <aside className="w-60 bg-white border-r border-rose-100 flex flex-col shadow-sm shrink-0">
-          {/* Logo */}
+        {/* ── Sidebar (desktop only) ── */}
+        <aside className="hidden md:flex w-60 bg-white border-r border-rose-100 flex-col shadow-sm shrink-0">
           <div className="px-5 py-6 border-b border-rose-100">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow">
@@ -30,7 +29,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Nav */}
           <nav className="flex-1 p-3 space-y-1">
             {NAV.map(({ to, icon: Icon, label, end }) => (
               <NavLink
@@ -45,7 +43,7 @@ export default function App() {
                   }`
                 }
               >
-                <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+                <Icon className="w-[18px] h-[18px]" />
                 {label}
               </NavLink>
             ))}
@@ -57,7 +55,7 @@ export default function App() {
         </aside>
 
         {/* ── Content ── */}
-        <main className="flex-1 overflow-auto min-h-screen">
+        <main className="flex-1 overflow-auto min-h-screen pb-16 md:pb-0">
           <Routes>
             <Route path="/"              element={<Dashboard />} />
             <Route path="/clients"       element={<Clients />} />
@@ -67,6 +65,25 @@ export default function App() {
           </Routes>
         </main>
       </div>
+
+      {/* ── Bottom nav (mobile only) ── */}
+      <nav className="fixed bottom-0 left-0 right-0 flex md:hidden bg-white border-t border-rose-100 shadow-lg z-50">
+        {NAV.map(({ to, icon: Icon, label, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              `flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-[10px] font-medium transition-colors ${
+                isActive ? 'text-rose-500' : 'text-gray-400'
+              }`
+            }
+          >
+            <Icon className="w-5 h-5" />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
     </BrowserRouter>
   );
 }
