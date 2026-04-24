@@ -1,8 +1,9 @@
 # Handoff Summary — flower-dates
 
-> Дата: 21 апреля 2026  
+> Дата: 25 апреля 2026  
 > Сервер: `144.31.196.251`  
-> Приложение: **http://144.31.196.251:5173** (production, фронт + `/api`)
+> Приложение: **http://144.31.196.251:5173** (production, фронт + `/api`)  
+> Репозиторий: **https://github.com/cleanyy/flower-dates**
 
 ---
 
@@ -17,32 +18,43 @@ CRM для цветочного магазина. Хранит клиентов 
 | Слой | Технология |
 |---|---|
 | Frontend | React 18, React Router 6, Tailwind CSS 3, Vite 5 |
-| Backend | Node.js, Express 4, better-sqlite3 |
+| Backend | Node.js, Express 4, better-sqlite3 v12 |
 | БД | SQLite (`dates.db` в корне проекта) |
 | Уведомления | Telegram Bot API, node-cron (9:00 ежедневно) |
 | Иконки | lucide-react |
 
 ---
 
-## Запуск
+## Запуск локально (Windows/Mac/Linux)
 
 ```bash
-# Режим разработки (фронт + бэк одновременно)
-npx concurrently "node server.js" "vite --host"
-
-# Продакшн (раздаёт собранный dist/ и API с одного порта)
-npm run build
-NODE_ENV=production PORT=5173 node server.js
+git clone https://github.com/cleanyy/flower-dates.git
+cd flower-dates
+npm run setup    # npm install + vite build
+npm start        # http://localhost:3001
 ```
 
-**Важно:** публичный `5173` теперь обслуживается не Vite dev server, а production Express под systemd:
+**Важно для Windows:** `better-sqlite3` требует компиляции нативного модуля.  
+На Node.js 24 всё работает без Visual Studio (используется better-sqlite3 v12 с prebuild).
+
+### Режим разработки
+
+```bash
+npm run dev      # API на :3001, Vite dev server на :5173
+```
+
+---
+
+## Запуск на сервере (production)
+
+На сервере `144.31.196.251` production-режим запущен через systemd:
 
 ```bash
 sudo systemctl status flower-dates.service
 sudo systemctl restart flower-dates.service
 ```
 
-Порт 5173 открыт в `ufw` (`sudo ufw allow 5173/tcp`). API доступен с того же origin через `/api`.
+Порт `5173` открыт в `ufw`. API доступен с того же origin через `/api`.
 
 ---
 
@@ -51,11 +63,12 @@ sudo systemctl restart flower-dates.service
 ```
 flower-dates/
 ├── server.js              # Express API + SQLite + cron-планировщик
-├── dates.db               # SQLite база данных (WAL-режим)
-├── vite.config.js         # Vite конфиг
+├── dates.db               # SQLite база данных (WAL-режим, не в git)
+├── flower-dates.service   # systemd unit для сервера
+├── vite.config.js         # Vite конфиг (proxy /api → localhost:3001 в dev)
 ├── src/
 │   ├── main.jsx           # Точка входа React
-│   ├── App.jsx            # Роутер + сайдбар
+│   ├── App.jsx            # Роутер + сайдбар (desktop) + нижняя навигация (mobile)
 │   ├── api.js             # Все fetch-вызовы к /api
 │   ├── utils.js           # Хелперы: эмодзи, форматирование, цвета
 │   ├── index.css          # Tailwind base
@@ -76,8 +89,8 @@ flower-dates/
 | id | INTEGER PK | |
 | name | TEXT | Имя клиента |
 | phone | TEXT | Телефон |
-| telegram_username | TEXT | `@username` без обязательного `@` |
-| max_username | TEXT | Ник Max или ссылка на чат из веб-версии |
+| telegram_username | TEXT | `@username` |
+| max_username | TEXT | Ник Max или ссылка на чат |
 | discount_percent | INTEGER | Скидка, default 10 |
 | is_vip | INTEGER | 0/1 — автоматически ставится в 1 при ≥3 активных датах |
 | notes | TEXT | Свободный текст |
@@ -137,29 +150,13 @@ POST /api/run-scheduler             Запустить планировщик в
 
 **Шаблон сообщения** — поддерживает переменные `{client_name}`, `{occasion}`, `{date}`, `{discount}`, `{phone}`.
 
-**Фильтры на главной:**
-- `today` — `days_until === 0`
-- `week` — `days_until <= 7`
-- `month` — `days_until <= 30`
-- `vip` — `is_vip = 1`
-
-Логика `daysUntil` вычисляется в JS (не в SQL), поэтому для фильтров `today/week/month` сервер подтягивает все даты, считает `days_until` в памяти и возвращает уникальные `client_id`.
-
 ---
 
-## Что было сделано в этой сессии
+## Адаптивность
 
-1. **Открыт доступ к приложению** — Vite запущен с флагом `--host`, открыт порт `5173` в `ufw`.
-
-2. **Кликабельные статблоки на главной** — `StatCard` (`Dashboard.jsx:109`) превращён в `<Link>` с `to="/clients?filter=..."`. Добавлен hover-эффект (`hover:shadow-md hover:scale-[1.02]`).
-
-3. **Фильтрация клиентов по статблокам** — расширен `GET /api/clients` в `server.js` для поддержки параметра `?filter`. `Clients.jsx` читает `filter` из `useSearchParams`, передаёт в `api.getClients()`. При активном фильтре показывается цветной баннер с кнопкой «Сбросить».
-
-4. **Группировка дат по клиенту на главной** — раздел «Ближайшие даты» в `Dashboard.jsx` переработан: вместо отдельной карточки на каждую дату теперь один блок на клиента. Добавлена функция `groupByClient()`, компонент `DateCard` заменён на `ClientCard` + `DateRow`. Структура карточки: шапка с именем клиента, телефоном, VIP-статусом, скидкой и кнопками «Позвонить» / «Telegram» / «Max»; ниже — строки дат с поводом, датой, бейджем «Через N дней» и кнопками WhatsApp / Max / СМС под каждый повод. Цвет рамки карточки определяется по ближайшей дате клиента.
-
-5. **Добавлен канал Max** — у клиента есть поле `max_username`, куда можно сохранить ник или ссылку на чат. В карточках клиента появилась кнопка Max по сохранённому контакту, а в кнопках памятных дат Max открывает официальный шаринг `https://max.ru/:share` с подготовленным текстом сообщения.
-
-6. **Публичный запуск переведён на systemd** — добавлен `flower-dates.service`, старый Vite dev server на `5173` остановлен. Теперь `http://144.31.196.251:5173` отдаёт production-сборку из `dist/`, а API работает по `/api` на том же порту.
+- **Desktop (md+):** боковое меню слева (w-60)
+- **Mobile:** боковое меню скрыто, внизу экрана фиксированная навигация (Главная / Клиенты / Настройки)
+- Отступы страниц: `p-4` на mobile, `p-6` на desktop
 
 ---
 
