@@ -1,41 +1,72 @@
-# 🌸 Памятные даты — CRM для цветочного магазина
+# Памятные даты — CRM для цветочного магазина
 
-## Быстрый старт
+## Запуск на своём компьютере
+
+### 1. Требования
+
+- Node.js 18+ — скачать с [nodejs.org](https://nodejs.org)
+- На **Windows** дополнительно нужны инструменты сборки (для `better-sqlite3`):
+  ```
+  npm install -g windows-build-tools
+  ```
+  или установить **Visual C++ Build Tools** через Visual Studio Installer.
+
+### 2. Установка и запуск
 
 ```bash
-cd flower-dates
-npm install
-npm run dev       # запускает оба сервера (бэкенд + фронтенд)
+npm run setup    # установит зависимости и соберёт фронтенд
+npm start        # запустит приложение на http://localhost:3001
 ```
 
-Откройте: **http://localhost:5173**
+Или по шагам вручную:
+
+```bash
+npm install      # установить зависимости
+npm run build    # собрать фронтенд (создаёт папку dist/)
+npm start        # запустить
+```
+
+### 3. Режим разработки
+
+```bash
+npm run dev
+```
+
+Запускает два сервера одновременно:
+- API (Express) на порту `3001`
+- Фронтенд (Vite dev server) на порту `5173` с горячей перезагрузкой
+
+Открыть: **http://localhost:5173**
 
 ---
 
-## Запуск в продакшн
+## Запуск на сервере (production)
 
 ```bash
 npm run build
 NODE_ENV=production PORT=5173 node server.js
 ```
 
-На сервере production-режим запущен через systemd:
+На сервере `144.31.196.251` production-режим запущен через systemd:
 
 ```bash
 sudo systemctl status flower-dates.service
 sudo systemctl restart flower-dates.service
 ```
 
+Приложение доступно по адресу: **http://144.31.196.251:5173**
+
 ---
 
 ## Структура
 
-| Порт | Назначение |
-|------|-----------|
-| 3001 | Express API + SQLite в ручном dev-режиме |
-| 5173 | Публичный production-сервер: фронтенд + `/api` |
+| Порт | Режим | Назначение |
+|------|-------|-----------|
+| 3001 | dev/prod local | Express API + статика |
+| 5173 | dev | Vite dev server (с прокси на 3001) |
+| 5173 | prod server | Express API + статика (systemd) |
 
-База данных автоматически создаётся в файле `dates.db`.
+База данных `dates.db` создаётся автоматически при первом запуске.
 
 ---
 
@@ -45,7 +76,7 @@ sudo systemctl restart flower-dates.service
 - **Клиенты** — поиск, добавление, карточка клиента
 - **Памятные даты** — до 10 дат на клиента, авто-VIP при 3+
 - **Связь** — кнопки «Позвонить», «WhatsApp», «Telegram», «Max», «СМС»
-- **Автоуведомления** — Telegram бот отправляет сообщения каждый день в 9:00
+- **Автоуведомления** — Telegram-бот отправляет сообщения каждый день в 9:00
 - **Настройки** — шаблон сообщения, дни до даты, токен бота
 
 ---
